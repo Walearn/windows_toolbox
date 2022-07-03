@@ -1,5 +1,6 @@
 '''目前程序最大的问题在于 可以重复启动 这很不好
 而且启动成功了 也没有什么提示信息'''
+import os
 import sys
 import time
 import PyQt5.QtCore as core
@@ -7,6 +8,14 @@ from PyQt5.QtWidgets import *
 from qt_material import apply_stylesheet
 from PyQt5.QtGui import *
 import threading
+import atexit
+from platform import *
+def del_tex():
+    if system()=="Linux":
+        os.popen("rm lock.txt")
+    else:
+        os.popen("del lock.txt")
+atexit.register(del_tex)
 
 def return_tiem_and_info():
     file = open("database/SCHEDULE.txt", "r", encoding="utf-8")
@@ -36,6 +45,7 @@ class Window(QWidget):
         # self.info_list = return_tiem_and_info()[1]
         self.desktop = QDesktopWidget()
         self.setWindowFlag(core.Qt.WindowStaysOnTopHint)
+        self.setWindowTitle("休息提示")
 
         # self.font = QFont()
         # self.font.setFamily("Arial")  # 括号里可以设置成自己想要的其它字体
@@ -43,19 +53,23 @@ class Window(QWidget):
         self.lable_time = QLabel(self)
         self.lable_info = QLabel(self)
         self.button = QPushButton(self)
+        self.message = QMessageBox(self)
+
+        self.x_posion = int(self.desktop.width() * 0.5)
+
     def creat_button(self):
         self.button.setText("感谢提醒")
 
         self.button.move(int(self.x_posion - self.button.size().width() * 0.5),
-                             int(self.desktop.height() * 0.60))
+                         int(self.desktop.height() * 0.60))
         self.button.clicked.connect(self.close)
+
     def creat_lable(self):
 
         self.time_text = "现在的时间是" + time.ctime()[11:16]
         self.lable_time.setText(self.time_text)
-        self.x_posion = int(self.desktop.width() * 0.5)
-        self.lable_time.resize(400, 30)
 
+        self.lable_time.resize(400, 30)
 
         self.lable_time.setStyleSheet("font-size:30px;")
 
@@ -64,10 +78,9 @@ class Window(QWidget):
         self.lable_time.show()
         self.lable_time.update()
 
-
         # self.info_text = self.info_list[self.time_list.index(time.ctime()[11:16])]
         self.info_text = "休息一下吧 你的身体也是很重要的呢"
-        self.lable_info.resize(len(self.info_text)*30,30)
+        self.lable_info.resize(len(self.info_text) * 30, 30)
 
         self.lable_info.setText(self.info_text)
 
@@ -94,18 +107,32 @@ class Window(QWidget):
         except:
             return False
 
+    def messagebox(self,_text):
+        self.message.setText(_text)
+        self.message.move(int(self.desktop.width()*0.47),int(self.desktop.height()*0.4))
+        self.message.setWindowTitle("温馨提示")
+
+        # self.message.setIcon(QIcon(QPixmap("image.ico")))
+        self.message.exec_()
+
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     apply_stylesheet(app, theme="dark_blue.xml")
     mywindow = Window()
-    while 1:
-        time.sleep(3300)
-        mywindow.creat_lable()
-        mywindow.creat_button()
-        mywindow.showFullScreen()
-        app.exec_()
-        time.sleep(300)
-
+    try:
+        open("lock.txt", "x", encoding="utf-8")
+        mywindow.messagebox("程序启动成功")
+        while 1:
+            time.sleep(3300)
+            mywindow.creat_lable()
+            mywindow.creat_button()
+            mywindow.showFullScreen()
+            app.exec_()
+            time.sleep(300)
+    except:
+        mywindow.messagebox("程序已经启动")
+        sys.exit()
 
 # todo you-get 现在用不了
